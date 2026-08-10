@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "siliconstat"
+version = "0.1.0"
+description = "Monte Carlo Mismatch Analysis and Statistical Verification Platform for Analog ICs"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Rohit" }]
+keywords = ["eda", "spice", "monte-carlo", "mismatch", "analog", "yield", "pelgrom"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+
+[project.urls]
+Homepage = "https://github.com/ADuetrohit/siliconstat"
+Repository = "https://github.com/ADuetrohit/siliconstat"
+Documentation = "https://github.com/ADuetrohit/siliconstat/tree/main/docs"
+Issues = "https://github.com/ADuetrohit/siliconstat/issues"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "pydantic>=2.5", "jinja2>=3.1"]
+ml = ["scikit-learn>=1.3"]
+parquet = ["pyarrow>=14"]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "httpx>=0.26"]
+all = [
+    "fastapi>=0.110", "uvicorn[standard]>=0.27", "pydantic>=2.5", "jinja2>=3.1",
+    "scikit-learn>=1.3", "pyarrow>=14", "pytest>=7.4", "pytest-cov>=4.1", "httpx>=0.26",
+]
+
+[project.scripts]
+siliconstat = "siliconstat.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+siliconstat = ["report/templates/*.html", "py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "ngspice: requires an external ngspice binary",
+]
+filterwarnings = ["ignore::DeprecationWarning"]

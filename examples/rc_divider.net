@@ -1,0 +1,31 @@
+* ---------------------------------------------------------------------------
+* Analytical validation circuit -- resistive divider
+*
+*   V1 5V --- R1 1k --- mid --- R2 3k --- gnd
+*
+* Closed-form answers the simulator must reproduce exactly:
+*   I      = 5 V / 4 kohm       = 1.25 mA
+*   V(mid) = 5 V * 3k / 4k      = 3.75 V
+*   P      = 5 V * 1.25 mA      = 6.25 mW
+*
+* Used by tests/test_analytical.py as the Ohm's-law reference for the MNA
+* assembly and by the Monte Carlo layer as a case whose output distribution
+* can be predicted in closed form from the resistor tolerances.
+* ---------------------------------------------------------------------------
+.title Resistive Divider
+
+V1 in 0 5
+R1 in  mid 1k
+R2 mid 0   3k
+
+.op
+
+.measure vmid V(mid)
+.measure i1   I(R1)
+.measure pr2  P(R2)
+.measure ptot P(total)
+.measure ratio EXPR vmid/5
+
+.spec vmid <= 3.9
+.spec vmid >= 3.6
+.end

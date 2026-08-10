@@ -1,0 +1,31 @@
+* ---------------------------------------------------------------------------
+* Diode bias reference -- exercises the exponential device and pnjlim limiting
+*
+*   vdd 1.8 --- R1 10k --- a --- D1 --- gnd
+*
+* The operating point is the solution of the transcendental pair
+*   I  = (VDD - Va) / R1
+*   Va = N*Vt*ln(I/IS) + I*RS
+* which the Newton-Raphson solver must find from a cold start.  At 27 degC
+* this gives roughly Va = 0.60 V and I = 120 uA.
+*
+* RS is realised internally as an explicit series resistor on an auto-created
+* internal node, so the exponential element itself stays a two-terminal device.
+* ---------------------------------------------------------------------------
+.title Diode Bias Reference
+
+.model DX D IS=1e-14 N=1.0 RS=5 CJ0=0.5p VJ=0.7 M=0.5
+
+VDD vdd 0 1.8
+R1  vdd a  10k
+D1  a   0  DX
+
+.op
+
+.measure va   V(a)
+.measure id1  I(D1)
+.measure ptot P(total)
+
+.spec va <= 0.75
+.spec va >= 0.45
+.end

@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.sqlite
+*.sqlite3
+*.db
+node_modules/
+frontend/dist/
+frontend/.vite/
+out/
+runs/
+.DS_Store
+*.parquet
+tools/
+
+# Third-party ngspice distribution used only for cross-validation; install it
+# yourself (docs/validation.md) rather than vendoring the binaries.
+
+# Unrelated material that happens to live in this working directory.
+wowki_stat/
+
+# Generated report and screenshot artefacts, except the figures the README uses.
+!docs/images/

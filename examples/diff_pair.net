@@ -1,0 +1,78 @@
+* ---------------------------------------------------------------------------
+* Demo circuit #2 -- NMOS resistively-loaded differential pair
+*
+*      vdd --+--------+--------+
+*            |        |        |
+*           RL1      RL2       |
+*            |        |        |
+*          outp     outn       |
+*            |        |        |
+*   inp --|[ M1      M2 ]|-- inn
+*            |        |
+*            +---tail-+
+*                |
+*              ITAIL
+*                |
+*               gnd
+*
+* Headline demonstration: the distribution of INPUT-REFERRED OFFSET VOLTAGE.
+* With M1 and M2 nominally identical the offset is zero; threshold and current-
+* factor mismatch between them produce the offset spread that limits every
+* comparator and amplifier built from this cell.
+*
+* Vos is measured, not modelled: two DC solves give the output imbalance and
+* the differential gain, and Vos = -Vod0 / Ad.
+* ---------------------------------------------------------------------------
+.title NMOS Differential Pair
+* --- simplified 180 nm-class model cards -----------------------------------
+* Square-law (SPICE level-1 class) cards with plausible 180 nm numbers.
+* NOT a foundry PDK and not silicon-calibrated -- see docs/limitations.md.
+* Mismatch: AVT in V*um, ABETA dimensionless*um (Pelgrom, see docs/pelgrom.md).
+.model NCH NMOS
++ VTO=0.45 KP=246u LAMBDA=0.08 GAMMA=0.40 PHI=0.80
++ TOX=4.1n CGSO=2.4e-10 CGDO=2.4e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=3.5m ABETA=0.010
+
+.model PCH PMOS
++ VTO=-0.45 KP=86u LAMBDA=0.10 GAMMA=0.45 PHI=0.85
++ TOX=4.1n CGSO=2.6e-10 CGDO=2.6e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=4.2m ABETA=0.012
+
+.param ITAIL=20u
+.param WIN=20u
+.param LIN=1u
+.param RLOAD=50k
+
+VDD  vdd 0 1.8
+VINP inp 0 DC 0.9 AC  0.5
+VINN inn 0 DC 0.9 AC -0.5
+
+M1 outp inp tail 0 NCH W={WIN} L={LIN} MATCH=DIFFPAIR
+M2 outn inn tail 0 NCH W={WIN} L={LIN} MATCH=DIFFPAIR
+
+ITAIL tail 0 {ITAIL}
+
+RL1 vdd outp {RLOAD}
+RL2 vdd outn {RLOAD}
+
+.op
+.ac dec 10 1 1G
+
+.measure voutp V(outp)
+.measure voutn V(outn)
+.measure vtail V(tail)
+.measure vod   EXPR voutp - voutn
+.measure id1   I(M1)
+.measure id2   I(M2)
+.measure imbal EXPR 100*(id1-id2)/(0.5*(id1+id2))
+.measure vos   VOS srcp=VINP srcn=VINN outp=outp outn=outn
+.measure ad    GAIN in=inp out=outp
+.measure ptot  P(total)
+
+.spec vos <= 2m
+.spec vos >= -2m
+.spec ad  >= 20
+.spec ptot <= 60u
+.end

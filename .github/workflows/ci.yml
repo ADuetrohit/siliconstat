@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: pytest (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[all]"
+
+      # The ngspice-dependent tests skip themselves when the binary is absent,
+      # so install it and get the cross-validation for free.
+      - name: Install ngspice
+        run: sudo apt-get update && sudo apt-get install -y ngspice
+
+      - name: Test
+        run: pytest -q --junitxml=junit.xml
+
+      - name: Summarise
+        if: always()
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET, os, pathlib
+          if not pathlib.Path("junit.xml").is_file():
+              raise SystemExit("no junit.xml -- pytest did not get far enough")
+          a = ET.parse("junit.xml").getroot().find("testsuite").attrib
+          passed = int(a["tests"]) - int(a["failures"]) - int(a["errors"]) - int(a["skipped"])
+          line = (f"{passed} passed, {a['skipped']} skipped, {a['failures']} failed, "
+                  f"{a['errors']} errored in {float(a['time']):.1f}s")
+          print(line)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as fh:
+              fh.write(f"### Python ${{ matrix.python }}\n\n{line}\n")
+          PY
+
+  frontend:
+    name: frontend build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit -p tsconfig.json
+
+      - name: Build
+        run: npm run build

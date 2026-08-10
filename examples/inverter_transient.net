@@ -1,0 +1,54 @@
+* ---------------------------------------------------------------------------
+* CMOS inverter -- transient demonstration
+*
+*        vdd
+*         |
+*     M1 -| PMOS
+*  in ----+---- out ---- CL
+*     M2 -| NMOS
+*         |
+*        gnd
+*
+* Drives a 1 pF load with a 1.8 V pulse and measures the edge rates.  Mismatch
+* between M1 and M2 skews the pull-up and pull-down strengths, so the rise and
+* fall times acquire distributions -- the timing analogue of the current-mirror
+* copy error.
+*
+* Transient analysis here is fixed-step (see docs/limitations.md): TSTEP must
+* be small compared with the edge you are measuring.  20 ps against a ~1 ns
+* edge gives ~50 points per transition.
+* ---------------------------------------------------------------------------
+.title CMOS Inverter Transient
+* --- simplified 180 nm-class model cards -----------------------------------
+.model NCH NMOS
++ VTO=0.45 KP=246u LAMBDA=0.08 GAMMA=0.40 PHI=0.80
++ TOX=4.1n CGSO=2.4e-10 CGDO=2.4e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=3.5m ABETA=0.010
+
+.model PCH PMOS
++ VTO=-0.45 KP=86u LAMBDA=0.10 GAMMA=0.45 PHI=0.85
++ TOX=4.1n CGSO=2.6e-10 CGDO=2.6e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=4.2m ABETA=0.012
+
+VDD vdd 0 1.8
+VIN in  0 DC 0 PULSE(0 1.8 1n 50p 50p 3n 8n)
+
+M1 out in vdd vdd PCH W=8u L=0.5u
+M2 out in 0   0   NCH W=4u L=0.5u
+CL out 0 1p
+
+.op
+.tran 20p 8n
+
+.measure tfall FALLTIME node=out tstart=0.5n tstop=3.6n
+.measure trise RISETIME node=out tstart=3.8n tstop=8n
+.measure vhigh VMAX node=out
+.measure vlow  VMIN node=out
+.measure skew  EXPR 100*(trise-tfall)/(0.5*(trise+tfall))
+
+.spec trise <= 1.6n
+.spec tfall <= 1.6n
+.spec vlow  <= 20m
+.end

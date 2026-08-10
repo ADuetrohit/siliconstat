@@ -1,0 +1,26 @@
+* ---------------------------------------------------------------------------
+* Generic 180 nm-class CMOS model cards for SiliconStat
+*
+* These are SIMPLIFIED square-law (level-1 style) cards with plausible
+* 180 nm-class numbers.  They are NOT a foundry PDK, are not extracted from
+* silicon, and must not be used for tape-out decisions.  They exist so that
+* the statistical machinery in this project operates on physically sensible
+* device behaviour.  See docs/limitations.md.
+*
+* Mismatch coefficients follow the Pelgrom convention used throughout this
+* project:   AVT   in V*um        sigma(Vth)   = AVT   / sqrt(W_um * L_um)
+*            ABETA dimensionless*um  sigma(b)/b = ABETA / sqrt(W_um * L_um)
+* AVT = 3.5 mV*um and ABETA = 1 %*um are representative of a 0.18 um process.
+* ---------------------------------------------------------------------------
+
+.model NCH NMOS
++ VTO=0.45 KP=246u LAMBDA=0.08 GAMMA=0.40 PHI=0.80
++ TOX=4.1n CGSO=2.4e-10 CGDO=2.4e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=3.5m ABETA=0.010
+
+.model PCH PMOS
++ VTO=-0.45 KP=86u LAMBDA=0.10 GAMMA=0.45 PHI=0.85
++ TOX=4.1n CGSO=2.6e-10 CGDO=2.6e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=4.2m ABETA=0.012

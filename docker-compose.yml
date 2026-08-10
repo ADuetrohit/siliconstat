@@ -1,0 +1,60 @@
+# SiliconStat -- single-container deployment (API + built dashboard).
+#
+#   docker compose up --build      -> http://localhost:8000
+#
+# The SQLite database lives on the named volume so runs survive rebuilds.
+# For the development loop use the `dev` profile instead, which runs the API
+# with reload and the Vite dev server side by side:
+#
+#   docker compose --profile dev up
+
+services:
+  siliconstat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: siliconstat:latest
+    container_name: siliconstat
+    ports:
+      - "8000:8000"
+    volumes:
+      - siliconstat-data:/data
+    environment:
+      SILICONSTAT_DB: /data/siliconstat.sqlite
+      SILICONSTAT_JOB_WORKERS: "2"
+      SILICONSTAT_CORS: "http://localhost:5173,http://127.0.0.1:5173"
+    restart: unless-stopped
+
+  api-dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    command: >
+      uvicorn siliconstat.api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src:ro
+      - ./examples:/app/examples:ro
+      - siliconstat-data:/data
+    environment:
+      SILICONSTAT_DB: /data/siliconstat.sqlite
+
+  frontend-dev:
+    profiles: ["dev"]
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    environment:
+      VITE_API_BASE: http://localhost:8000
+    depends_on:
+      - api-dev
+
+volumes:
+  siliconstat-data:

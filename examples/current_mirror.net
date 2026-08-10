@@ -1,0 +1,60 @@
+* ---------------------------------------------------------------------------
+* Demo circuit #1 -- NMOS current mirror
+*
+*        vdd ----+---------------+
+*                |               |
+*              IREF            R1 125k
+*                |               |
+*              nref ----+----- out
+*                |      |        |
+*             M1 |-+    +------|-| M2      (gates tied, sources at 0)
+*                |               |
+*               gnd            gnd
+*
+* M1 is diode-connected and sets the gate voltage; M2 copies the current.
+* Threshold mismatch between M1 and M2 translates directly into a copy error,
+* which is the quantity this project is built to characterise.
+* ---------------------------------------------------------------------------
+.title NMOS Current Mirror
+* --- simplified 180 nm-class model cards -----------------------------------
+* Square-law (SPICE level-1 class) cards with plausible 180 nm numbers.
+* NOT a foundry PDK and not silicon-calibrated -- see docs/limitations.md.
+* Mismatch: AVT in V*um, ABETA dimensionless*um (Pelgrom, see docs/pelgrom.md).
+.model NCH NMOS
++ VTO=0.45 KP=246u LAMBDA=0.08 GAMMA=0.40 PHI=0.80
++ TOX=4.1n CGSO=2.4e-10 CGDO=2.4e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=3.5m ABETA=0.010
+
+.model PCH PMOS
++ VTO=-0.45 KP=86u LAMBDA=0.10 GAMMA=0.45 PHI=0.85
++ TOX=4.1n CGSO=2.6e-10 CGDO=2.6e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=4.2m ABETA=0.012
+
+.param IB=10u
+.param WM=10u
+.param LM=1u
+
+VDD  vdd 0    1.8
+IREF vdd nref {IB}
+
+M1 nref nref 0 0 NCH W={WM} L={LM} MATCH=MIRROR
+M2 out  nref 0 0 NCH W={WM} L={LM} MATCH=MIRROR
+
+R1 vdd out 125k
+
+.op
+
+.measure iref  I(M1)
+.measure iout  I(M2)
+.measure vgs   V(nref)
+.measure vout  V(out)
+.measure ratio EXPR iout/iref
+.measure ierr  EXPR 100*(iout-iref)/iref
+.measure ptot  P(total)
+
+.spec ierr <= 2%
+.spec ierr >= -2%
+.spec ptot <= 100u
+.end

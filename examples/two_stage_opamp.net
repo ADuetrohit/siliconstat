@@ -1,0 +1,89 @@
+* ---------------------------------------------------------------------------
+* Demo circuit #3 -- two-stage Miller-compensated CMOS operational amplifier
+*
+*   Stage 1 : NMOS differential pair M1/M2, PMOS mirror load M3/M4, tail M5
+*   Stage 2 : PMOS common source M6 loaded by NMOS current sink M7
+*   Comp.   : Miller capacitor CC from out back to n2, with nulling resistor
+*             RZ ~ 1/gm6 that pushes the right-half-plane zero out of the way
+*   Bias    : IBIAS + diode-connected M8 mirror the tail and second-stage sinks
+*
+* TESTBENCH: DC-closed / AC-open loop.
+*   RFB (10 G) closes unity-gain feedback at DC, which parks the output at the
+*   input common mode instead of at a rail -- essential once mismatch is
+*   injected, because an open-loop 85 dB amplifier with a few mV of offset
+*   saturates.  CFB (10 mF) grounds the feedback node for AC, so every AC
+*   measurement above ~1 Hz sees the true OPEN-loop response
+*   (loop gain through RFB/CFB at 1 Hz is ~3e-5, i.e. negligible).
+*
+* Offset is reported input-referred and corrected for finite loop gain:
+*   Vout*(1+A) = A*(Vin + Vos)  =>  Vos = Vout + Vout/A - Vin
+* ---------------------------------------------------------------------------
+.title Two-Stage Miller OTA
+* --- simplified 180 nm-class model cards -----------------------------------
+* Square-law (SPICE level-1 class) cards with plausible 180 nm numbers.
+* NOT a foundry PDK and not silicon-calibrated -- see docs/limitations.md.
+* Mismatch: AVT in V*um, ABETA dimensionless*um (Pelgrom, see docs/pelgrom.md).
+.model NCH NMOS
++ VTO=0.45 KP=246u LAMBDA=0.08 GAMMA=0.40 PHI=0.80
++ TOX=4.1n CGSO=2.4e-10 CGDO=2.4e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=3.5m ABETA=0.010
+
+.model PCH PMOS
++ VTO=-0.45 KP=86u LAMBDA=0.10 GAMMA=0.45 PHI=0.85
++ TOX=4.1n CGSO=2.6e-10 CGDO=2.6e-10
++ TNOM=27 TCV=-0.9m BEX=-1.5
++ AVT=4.2m ABETA=0.012
+
+.param IB=20u
+.param WIN=20u
+.param LCH=1u
+
+VDD  vdd 0 1.8
+VINP inp 0 DC 0.9 AC 1
+
+* --- bias chain -----------------------------------------------------------
+IBIAS vdd nbias {IB}
+M8 nbias nbias 0 0 NCH W=10u L={LCH} MATCH=BIASMIR
+M5 tail  nbias 0 0 NCH W=10u L={LCH} MATCH=BIASMIR
+M7 out   nbias 0 0 NCH W=20u L={LCH} MATCH=BIASMIR
+
+* --- stage 1: differential pair with mirror load ---------------------------
+M1 n1 inn tail 0 NCH W={WIN} L={LCH} MATCH=INPAIR
+M2 n2 inp tail 0 NCH W={WIN} L={LCH} MATCH=INPAIR
+M3 n1 n1 vdd vdd PCH W=20u L={LCH} MATCH=LOADMIR
+M4 n2 n1 vdd vdd PCH W=20u L={LCH} MATCH=LOADMIR
+
+* --- stage 2: PMOS common source, Miller compensated ------------------------
+M6 out n2 vdd vdd PCH W=80u L={LCH}
+RZ n2  nz 2k
+CC nz  out 2p
+CL out 0  1p
+
+* --- DC-closed / AC-open feedback network ----------------------------------
+RFB out inn 10G
+CFB inn 0  10m
+
+.op
+.ac dec 12 1 1G
+
+.measure vout  V(out)
+.measure vin   V(inp)
+.measure vn1   V(n1)
+.measure vn2   V(n2)
+.measure av    GAIN in=inp out=out
+.measure avlin GAIN in=inp out=out units=lin
+.measure ugf   UGF in=inp out=out
+.measure pm    PM  in=inp out=out
+.measure bw    BW  in=inp out=out
+.measure id6   I(M6)
+.measure ptot  P(total)
+.measure vos   EXPR vout + vout/avlin - vin
+
+.spec av   >= 70
+.spec ugf  >= 10MEG
+.spec pm   >= 45
+.spec vos  <= 10m
+.spec vos  >= -10m
+.spec ptot <= 250u
+.end
