@@ -15,9 +15,9 @@ jobs:
       matrix:
         python: ['3.10', '3.12']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -28,12 +28,29 @@ jobs:
           pip install -e ".[all]"
 
       # The ngspice-dependent tests skip themselves when the binary is absent,
-      # so install it and get the cross-validation for free.
+      # so install it and get the cross-validation for free. Ubuntu ships 42;
+      # development happens against 46, which makes CI a second opinion on the
+      # ngspice side too.
       - name: Install ngspice
         run: sudo apt-get update && sudo apt-get install -y ngspice
 
+      # The API serves the built dashboard and falls back to index.html for
+      # client-side routes. Those tests skip when frontend/dist is absent, so
+      # without this build they would quietly contribute nothing.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the dashboard
+        run: npm ci && npm run build
+        working-directory: frontend
+
+      # -rs lists why anything skipped, so a test that quietly stops running is
+      # visible in the log rather than hiding inside the pass count.
       - name: Test
-        run: pytest -q --junitxml=junit.xml
+        run: pytest -q -rs --junitxml=junit.xml
 
       - name: Summarise
         if: always()
@@ -58,9 +75,9 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: npm
