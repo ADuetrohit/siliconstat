@@ -22,16 +22,17 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
 ]
 
-[project.urls]
-Homepage = "https://github.com/ADuetrohit/siliconstat"
-Repository = "https://github.com/ADuetrohit/siliconstat"
-Documentation = "https://github.com/ADuetrohit/siliconstat/tree/main/docs"
-Issues = "https://github.com/ADuetrohit/siliconstat/issues"
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
     "pandas>=2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ADuetrohit/siliconstat"
+Repository = "https://github.com/ADuetrohit/siliconstat"
+Documentation = "https://github.com/ADuetrohit/siliconstat/tree/main/docs"
+Issues = "https://github.com/ADuetrohit/siliconstat/issues"
 
 [project.optional-dependencies]
 api = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "pydantic>=2.5", "jinja2>=3.1"]
