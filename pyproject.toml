@@ -9,7 +9,7 @@ description = "Monte Carlo Mismatch Analysis and Statistical Verification Platfo
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Rohit" }]
+authors = [{ name = "ADuetrohit", email = "rohitnalbuga2@gmail.com" }]
 keywords = ["eda", "spice", "monte-carlo", "mismatch", "analog", "yield", "pelgrom"]
 classifiers = [
     "Development Status :: 4 - Beta",
